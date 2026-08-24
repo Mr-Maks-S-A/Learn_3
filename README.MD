@@ -53,11 +53,7 @@ cmake --build build --parallel $(nproc)
 ```
 
 ```bash
-ls -la build/bin/  
-```
-
-```bash
-cat build/bin/in.txt 
+./build/bin/
 ```
 
 ---
