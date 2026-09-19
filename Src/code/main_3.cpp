@@ -1,105 +1,152 @@
 /**
- * @file main.cpp
- * @brief Домашнее задание: Хеширование (Задание 3).
+ * @file main_3.cpp
+ * @brief Домашнее задание: Графы (Задание 3*. Поиск циклов).
  * 
  * В файле представлены:
- * 1. Реализация упрощённого алгоритма Рабина-Карпа (find_substring_light_rabin_karp).
- * 2. Поиск подстрок в интерактивном цикле до ввода команды "exit".
+ * 1. Чтение матрицы смежности из нескольких файлов (input.txt и input_2.txt).
+ * 2. Рекурсивный алгоритм поиска циклов в неориентированном графе с помощью DFS.
+ * 3. Автоматическое освобождение динамической памяти.
  */
 
 #include <iostream>
+#include <fstream>
 #include <string>
-#include <cstdint>
+#include <vector>
 
 #include <Until/Input.hpp>
 
 // ============================================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// 1. Вспомогательные функции для памяти
 // ============================================================================
 
 /**
- * @brief Вычисляет полиномиальный хэш строки.
+ * @brief Освобождает динамическую память, выделенную под матрицу смежности.
  */
-int real_string_hash(const std::string& s, long long p = 31, long long n = 1'000'000'007) {
-    unsigned long long hash = 0;
-    unsigned long long p_pow = 1;
-
-    for (char ch : s) {
-        unsigned long long char_code = static_cast<unsigned char>(ch);
-        hash = (hash + (char_code % n) * p_pow) % n;
-        p_pow = (p_pow * (p % n)) % n;
+void free_matrix(int** matrix, int rows) {
+    if (matrix == nullptr) return;
+    for (int i = 0; i < rows; ++i) {
+        delete[] matrix[i];
     }
-
-    return static_cast<int>(hash);
+    delete[] matrix;
 }
 
 // ============================================================================
-// 1. ЗАДАНИЕ 3. УПРОЩЁННЫЙ АЛГОРИТМ РАБИНА-КАРПА
+// 2. АЛГОРИТМ ПОИСКА ЦИКЛОВ (DFS)
 // ============================================================================
 
 /**
- * @brief Находит индекс первого вхождения подстроки в строке по алгоритму Рабина-Карпа.
- * 
- * @param source Исходная строка, в которой выполняется поиск.
- * @param substring Искомая подстрока.
- * @return int Индекс первого вхождения подстроки или -1, если совпадение не найдено.
+ * @brief Рекурсивный поиск цикла в графе через DFS.
  */
-int find_substring_light_rabin_karp(const std::string& source, const std::string& substring) {
-    size_t source_len = source.length();
-    size_t sub_len = substring.length();
+bool has_cycle_dfs(int current_vertex, int parent_vertex, int** matrix, bool* visited, int vertices_count) {
+    visited[current_vertex] = true;
 
-    if (sub_len > source_len || sub_len == 0) {
-        return -1;
-    }
-
-    int sub_hash = real_string_hash(substring);
-    int current_hash = real_string_hash(source.substr(0, sub_len));
-
-    for (size_t i = 0; i <= source_len - sub_len; ++i) {
-        // Проверяем совпадение хэшей
-        if (current_hash == sub_hash) {
-            // При совпадении хэшей выполняем посимвольную проверку (коллизии)
-            if (source.substr(i, sub_len) == substring) {
-                return static_cast<int>(i);
+    for (int next_vertex = 0; next_vertex < vertices_count; ++next_vertex) {
+        if (matrix[current_vertex][next_vertex] == 1) {
+            if (!visited[next_vertex]) {
+                if (has_cycle_dfs(next_vertex, current_vertex, matrix, visited, vertices_count)) {
+                    return true;
+                }
+            } 
+            else if (next_vertex != parent_vertex) {
+                return true;
             }
         }
+    }
 
-        // Пересчитываем хэш для следующего окна длины sub_len
-        if (i < source_len - sub_len) {
-            current_hash = real_string_hash(source.substr(i + 1, sub_len));
+    return false;
+}
+
+/**
+ * @brief Проверяет наличие хотя бы одного цикла во всём графе.
+ */
+bool contains_cycle(int** matrix, int vertices_count) {
+    bool* visited = new bool[vertices_count]{false};
+
+    for (int i = 0; i < vertices_count; ++i) {
+        if (!visited[i]) {
+            if (has_cycle_dfs(i, -1, matrix, visited, vertices_count)) {
+                delete[] visited;
+                return true;
+            }
         }
     }
 
-    return -1;
+    delete[] visited;
+    return false;
 }
 
 // ============================================================================
-// 2. ТЕСТИРОВАНИЕ И MAIN
+// 3. ФУНКЦИЯ ОБРАБОТКИ ФАЙЛА
+// ============================================================================
+
+/**
+ * @brief Читает граф из файла и выполняет проверку на циклы.
+ */
+void process_graph_file(const std::string& filepath) {
+    std::cout << "----------------------------------------------------------------------------------------\n";
+    std::cout << "Анализ файла: " << filepath << "\n";
+
+    std::ifstream file(filepath);
+
+    if (!file.is_open()) {
+        std::cerr << "Ошибка: не удалось открыть файл " << filepath << "\n\n";
+        return;
+    }
+
+    int N = 0;
+    if (!(file >> N) || N <= 0) {
+        std::cerr << "Ошибка: некорректный формат файла или N <= 0.\n\n";
+        file.close();
+        return;
+    }
+
+    // Выделение динамической памяти под матрицу
+    int** matrix = new int*[N];
+    for (int i = 0; i < N; ++i) {
+        matrix[i] = new int[N];
+    }
+
+    // Считывание матрицы
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            file >> matrix[i][j];
+        }
+    }
+
+    file.close();
+
+    // Проверка на циклы и вывод результата
+    if (contains_cycle(matrix, N)) {
+        std::cout << "Результат: В графе есть цикл!\n";
+    } else {
+        std::cout << "Результат: В графе нет циклов\n";
+    }
+
+    // Освобождение памяти
+    free_matrix(matrix, N);
+    std::cout << "\n";
+}
+
+// ============================================================================
+// 4. MAIN
 // ============================================================================
 
 int main() {
     std::cout << "========================================================================================\n";
-    std::cout << "                   ДОМАШНЕЕ ЗАДАНИЕ: ХЕШИРОВАНИЕ (ЗАДАНИЕ 3)                             \n";
+    std::cout << "                   ДОМАШНЕЕ ЗАДАНИЕ: ГРАФЫ (ЗАДАНИЕ 3*. ПОИСК ЦИКЛОВ)                   \n";
     std::cout << "========================================================================================\n\n";
 
-    std::string source = get_input<std::string>("Введите строку, в которой будет осуществляться поиск: ", 1);
+    // Список файлов для тестирования
+    std::vector<std::string> test_files = {
+        "Source/input.txt",
+        "Source/input_2.txt"
+    };
 
-    std::string substring;
+    for (const auto& filepath : test_files) {
+        process_graph_file(filepath);
+    }
 
-    do {
-        substring = get_input<std::string>("Введите подстроку, которую нужно найти [exit => выход из программы]: ", 1);
-
-        int index = find_substring_light_rabin_karp(source, substring);
-
-        if (index != -1) {
-            std::cout << "Подстрока " << substring << " найдена по индексу " << index << "\n";
-        } else {
-            std::cout << "Подстрока " << substring << " не найдена\n";
-        }
-
-    } while (substring != "exit");
-
-    std::cout << "\n========================================================================================\n";
+    std::cout << "========================================================================================\n";
     std::cout << "Работа программы завершена.\n";
     std::cout << "========================================================================================\n";
 

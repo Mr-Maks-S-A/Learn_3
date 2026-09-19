@@ -1,7 +1,7 @@
 # Минимально требуемая версия CMake
 cmake_minimum_required(VERSION 3.14)
 
-project(Table_app VERSION 1.0 LANGUAGES CXX)
+project(Graph_app VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,12 +18,29 @@ add_library(APP_utils INTERFACE)
 target_include_directories(APP_utils INTERFACE "${CMAKE_SOURCE_DIR}/Src/include")
 
 
-add_executable(Table_1_app "${CMAKE_SOURCE_DIR}/Src/code/main_1.cpp")
-target_link_libraries(Table_1_app PRIVATE APP_utils)
+add_executable(Graph_1_app "${CMAKE_SOURCE_DIR}/Src/code/main_1.cpp")
+target_link_libraries(Graph_1_app PRIVATE APP_utils)
 
-add_executable(Table_2_app "${CMAKE_SOURCE_DIR}/Src/code/main_2.cpp")
-target_link_libraries(Table_2_app PRIVATE APP_utils)
+add_executable(Graph_2_app "${CMAKE_SOURCE_DIR}/Src/code/main_2.cpp")
+target_link_libraries(Graph_2_app PRIVATE APP_utils)
 
-add_executable(Table_3_app "${CMAKE_SOURCE_DIR}/Src/code/main_3.cpp")
-target_link_libraries(Table_3_app PRIVATE APP_utils)
+add_executable(Graph_3_app "${CMAKE_SOURCE_DIR}/Src/code/main_3.cpp")
+target_link_libraries(Graph_3_app PRIVATE APP_utils)
 
+add_executable(Graph_4_app "${CMAKE_SOURCE_DIR}/Src/code/main_4.cpp")
+target_link_libraries(Graph_4_app PRIVATE APP_utils)
+
+# ============================================================================
+# КОПИРОВАНИЕ В ВЫХОДНУЮ ДИРЕКТОРИЮ
+# ============================================================================
+
+set(INPUT_DIR "${CMAKE_SOURCE_DIR}/Source")
+set(OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Source")
+
+add_custom_command(
+    TARGET Graph_1_app POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${INPUT_DIR}" "${OUTPUT_DIR}"
+    COMMENT "Копирование директории Source в ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}..."
+    VERBATIM
+)

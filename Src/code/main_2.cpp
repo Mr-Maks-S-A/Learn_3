@@ -1,71 +1,131 @@
 /**
- * @file main.cpp
- * @brief Домашнее задание: Хеширование (Задание 2).
+ * @file main_2.cpp
+ * @brief Домашнее задание: Графы (Задание 2*. Обход в ширину).
  * 
  * В файле представлены:
- * 1. Реализация полиномиальной хэш-функции для строки (real_string_hash).
- * 2. Интерактивный ввод параметров p, n и обработка строк до команды "exit".
+ * 1. Чтение матрицы смежности из файла.
+ * 2. Итеративный алгоритм обхода графа в ширину (BFS) с использованием std::queue.
+ * 3. Интерактивный ввод стартовой вершины с валидацией через get_input.
+ * 4. Управление динамической памятью (2D-массив матрицы и 1D-массив посещённых вершин).
  */
 
 #include <iostream>
+#include <fstream>
 #include <string>
-#include <cstdint>
+#include <queue>
 
 #include <Until/Input.hpp>
 
 // ============================================================================
-// 1. ЗАДАНИЕ 2. НАСТОЯЩАЯ ХЭШ-ФУНКЦИЯ ДЛЯ СТРОКИ
+// 1. АЛГОРИТМ ОБХОДА В ШИРИНУ (BFS)
 // ============================================================================
 
 /**
- * @brief Вычисляет хэш строки по формуле: sum(s[i] * p^i) % n.
+ * @brief Итеративная функция обхода графа в ширину.
  * 
- * @param s Входная строка.
- * @param p Простое число (основание).
- * @param n Модуль хэширования.
- * @return int Значение хэша в диапазоне [0, n - 1].
+ * @param start_vertex Индекс начальной вершины (0-indexed внутри функции).
+ * @param matrix Двумерный динамический массив (матрица смежности).
+ * @param visited Динамический массив флагов посещения вершин.
+ * @param vertices_count Общее количество вершин (N).
  */
-int real_string_hash(const std::string& s, long long p, long long n) {
-    unsigned long long hash = 0;
-    unsigned long long p_pow = 1; // p^0 = 1
+void bfs(int start_vertex, int** matrix, bool* visited, int vertices_count) {
+    std::queue<int> q;
 
-    for (char ch : s) {
-        // Приведение символа к unsigned char во избежание отрицательных значений
-        unsigned long long char_code = static_cast<unsigned char>(ch);
+    // Помечаем стартовую вершину как посещённую и кладём её в очередь
+    visited[start_vertex] = true;
+    q.push(start_vertex);
 
-        // Прибавляем (code * p^i) % n к общей сумме
-        hash = (hash + (char_code % n) * p_pow) % n;
+    while (!q.empty()) {
+        int current_vertex = q.front();
+        q.pop();
 
-        // Переходим к следующей степени: p^(i+1) % n
-        p_pow = (p_pow * (p % n)) % n;
+        // Выводим номер вершины на консоль (переводим из 0-indexed в 1-indexed для пользователя)
+        std::cout << (current_vertex + 1) << " ";
+
+        // Обходим всех смежных соседей текущей вершины
+        for (int next_vertex = 0; next_vertex < vertices_count; ++next_vertex) {
+            // Если есть связь (значение 1) и вершина ещё не была посещена
+            if (matrix[current_vertex][next_vertex] == 1 && !visited[next_vertex]) {
+                visited[next_vertex] = true; // Отмечаем сразу при добавлении в очередь
+                q.push(next_vertex);
+            }
+        }
     }
-
-    return static_cast<int>(hash);
 }
 
 // ============================================================================
-// 2. ТЕСТИРОВАНИЕ И MAIN
+// 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ПАМЯТЬЮ
+// ============================================================================
+
+/**
+ * @brief Освобождает динамическую память, выделенную под матрицу смежности.
+ */
+void free_matrix(int** matrix, int rows) {
+    if (matrix == nullptr) return;
+    for (int i = 0; i < rows; ++i) {
+        delete[] matrix[i];
+    }
+    delete[] matrix;
+}
+
+// ============================================================================
+// 3. ТЕСТИРОВАНИЕ И MAIN
 // ============================================================================
 
 int main() {
     std::cout << "========================================================================================\n";
-    std::cout << "                   ДОМАШНЕЕ ЗАДАНИЕ: ХЕШИРОВАНИЕ (ЗАДАНИЕ 2)                             \n";
+    std::cout << "                   ДОМАШНЕЕ ЗАДАНИЕ: ГРАФЫ (ЗАДАНИЕ 2*. ОБХОД В ШИРИНУ)                 \n";
     std::cout << "========================================================================================\n\n";
 
-    // Безопасный ввод числовых параметров p и n
-    long long p = get_input<long long>("Введите p: ", 1);
-    long long n = get_input<long long>("Введите n: ", 1);
+    std::string filename = "Source/input.txt";
+    std::ifstream file(filename);
 
-    std::string input;
+    if (!file.is_open()) {
+        std::cerr << "Ошибка: не удалось открыть файл " << filename << "\n";
+        return 1;
+    }
 
-    do {
-        // Безопасный ввод строки через функцию get_input
-        input = get_input<std::string>("Введите строку [exit => выход из программы]: ", 1);
+    int N = 0;
+    if (!(file >> N) || N <= 0) {
+        std::cerr << "Ошибка: некорректный формат файла или неверное количество вершин N.\n";
+        file.close();
+        return 1;
+    }
 
-        int hash_value = real_string_hash(input, p, n);
-        std::cout << "Хэш строки " << input << " = " << hash_value << "\n";
+    // Выделение динамической памяти под матрицу смежности N x N
+    int** matrix = new int*[N];
+    for (int i = 0; i < N; ++i) {
+        matrix[i] = new int[N];
+    }
 
-    } while (input != "exit");
+    // Считывание матрицы смежности из файла
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            file >> matrix[i][j];
+        }
+    }
+
+    file.close();
+
+    std::cout << "В графе " << N << " вершин.\n";
+
+    // Безопасный ввод начальной вершины в диапазоне [1, N]
+    std::string prompt = "Введите номер вершины, с которой начнётся обход [1.." + std::to_string(N) + "]: ";
+    int start_vertex_user = get_input<int>(prompt, 1, N);
+
+    // Выделение и инициализация массива посещённых вершин (1D)
+    bool* visited = new bool[N]{false};
+
+    std::cout << "Порядок обхода вершин: ";
+
+    // Старт обхода с выбранной вершины (переводим из 1-indexed в 0-indexed)
+    bfs(start_vertex_user - 1, matrix, visited, N);
+
+    std::cout << "\n";
+
+    // Освобождение выделенной памяти
+    free_matrix(matrix, N);
+    delete[] visited;
 
     std::cout << "\n========================================================================================\n";
     std::cout << "Работа программы завершена.\n";
