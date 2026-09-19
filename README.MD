@@ -1,18 +1,3 @@
-<div align="right">
-  <a href="https://github.com/Mr-Maks-S-A/Learn/blob/v1.12.4/main.cpp">
-    <img src="https://img.shields.io/badge/Source_Code-blue?style=social&logo=github" height="25">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/Documentation-gray?style=social&logo=read-the-docs" height="25">
-  </a>
-</div>
-
-<div align="center">
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![C++](https://img.shields.io/badge/C++-20-blue.svg)
-![CMake](https://img.shields.io/badge/CMake-4.0+-brightgreen.svg)
-
 # 💻 TT
 </div>
 
@@ -31,17 +16,6 @@
 
 </div>
 
-### 🚀 Пример работы программы
-
-#### Вывод в консоль
-
-```bash
-
-```
-
-#### 🖼️ Preview
-
-
 
 ####  Команды для сборки
 ```bash
@@ -56,9 +30,6 @@ cmake --build build --parallel $(nproc)
 ./build/bin/
 ```
 
----
-
-### 📊 Прогресс обучения
 
 
 
