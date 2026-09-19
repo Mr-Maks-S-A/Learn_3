@@ -1,65 +1,44 @@
-/**
- * @file main_2.cpp
- * @brief Домашнее задание: Графы (Задание 2*. Обход в ширину).
- * 
- * В файле представлены:
- * 1. Чтение матрицы смежности из файла.
- * 2. Итеративный алгоритм обхода графа в ширину (BFS) с использованием std::queue.
- * 3. Интерактивный ввод стартовой вершины с валидацией через get_input.
- * 4. Управление динамической памятью (2D-массив матрицы и 1D-массив посещённых вершин).
- */
-
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <queue>
 
-#include <Until/Input.hpp>
+// Рекурсивный обход в глубину (DFS)
+void dfs(int current_vertex, int** matrix, bool* visited, int vertices_count, int* order, int& order_index) {
+    visited[current_vertex] = true;
 
-// ============================================================================
-// 1. АЛГОРИТМ ОБХОДА В ШИРИНУ (BFS)
-// ============================================================================
-
-/**
- * @brief Итеративная функция обхода графа в ширину.
- * 
- * @param start_vertex Индекс начальной вершины (0-indexed внутри функции).
- * @param matrix Двумерный динамический массив (матрица смежности).
- * @param visited Динамический массив флагов посещения вершин.
- * @param vertices_count Общее количество вершин (N).
- */
-void bfs(int start_vertex, int** matrix, bool* visited, int vertices_count) {
-    std::queue<int> q;
-
-    // Помечаем стартовую вершину как посещённую и кладём её в очередь
-    visited[start_vertex] = true;
-    q.push(start_vertex);
-
-    while (!q.empty()) {
-        int current_vertex = q.front();
-        q.pop();
-
-        // Выводим номер вершины на консоль (переводим из 0-indexed в 1-indexed для пользователя)
-        std::cout << (current_vertex + 1) << " ";
-
-        // Обходим всех смежных соседей текущей вершины
-        for (int next_vertex = 0; next_vertex < vertices_count; ++next_vertex) {
-            // Если есть связь (значение 1) и вершина ещё не была посещена
-            if (matrix[current_vertex][next_vertex] == 1 && !visited[next_vertex]) {
-                visited[next_vertex] = true; // Отмечаем сразу при добавлении в очередь
-                q.push(next_vertex);
-            }
+    for (int next_vertex = 0; next_vertex < vertices_count; ++next_vertex) {
+        if (matrix[current_vertex][next_vertex] == 1 && !visited[next_vertex]) {
+            dfs(next_vertex, matrix, visited, vertices_count, order, order_index);
         }
     }
+
+    order[order_index++] = current_vertex;
 }
 
-// ============================================================================
-// 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ПАМЯТЬЮ
-// ============================================================================
+void topological_sort(int** matrix, int N) {
+    bool* visited = new bool[N]{false};
+    int* order = new int[N];
+    int order_index = 0;
 
-/**
- * @brief Освобождает динамическую память, выделенную под матрицу смежности.
- */
+    for (int i = 0; i < N; ++i) {
+        if (!visited[i]) {
+            dfs(i, matrix, visited, N, order, order_index);
+        }
+    }
+
+    std::cout << "Топологический порядок вершин: ";
+    for (int i = N - 1; i >= 0; --i) {
+        std::cout << (order[i] + 1);
+        if (i > 0) {
+            std::cout << " ";
+        }
+    }
+    std::cout << "\n";
+
+    delete[] visited;
+    delete[] order;
+}
+
 void free_matrix(int** matrix, int rows) {
     if (matrix == nullptr) return;
     for (int i = 0; i < rows; ++i) {
@@ -68,68 +47,45 @@ void free_matrix(int** matrix, int rows) {
     delete[] matrix;
 }
 
-// ============================================================================
-// 3. ТЕСТИРОВАНИЕ И MAIN
-// ============================================================================
-
-int main() {
-    std::cout << "========================================================================================\n";
-    std::cout << "                   ДОМАШНЕЕ ЗАДАНИЕ: ГРАФЫ (ЗАДАНИЕ 2*. ОБХОД В ШИРИНУ)                 \n";
-    std::cout << "========================================================================================\n\n";
-
-    std::string filename = "Source/input.txt";
+// Вспомогательная функция для обработки одного файла
+void process_file(const std::string& filename) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
         std::cerr << "Ошибка: не удалось открыть файл " << filename << "\n";
-        return 1;
+        return;
     }
 
     int N = 0;
     if (!(file >> N) || N <= 0) {
-        std::cerr << "Ошибка: некорректный формат файла или неверное количество вершин N.\n";
+        std::cerr << "Ошибка чтения N из файла " << filename << "\n";
         file.close();
-        return 1;
+        return;
     }
 
-    // Выделение динамической памяти под матрицу смежности N x N
     int** matrix = new int*[N];
     for (int i = 0; i < N; ++i) {
         matrix[i] = new int[N];
     }
 
-    // Считывание матрицы смежности из файла
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
             file >> matrix[i][j];
         }
     }
-
     file.close();
 
-    std::cout << "В графе " << N << " вершин.\n";
-
-    // Безопасный ввод начальной вершины в диапазоне [1, N]
-    std::string prompt = "Введите номер вершины, с которой начнётся обход [1.." + std::to_string(N) + "]: ";
-    int start_vertex_user = get_input<int>(prompt, 1, N);
-
-    // Выделение и инициализация массива посещённых вершин (1D)
-    bool* visited = new bool[N]{false};
-
-    std::cout << "Порядок обхода вершин: ";
-
-    // Старт обхода с выбранной вершины (переводим из 1-indexed в 0-indexed)
-    bfs(start_vertex_user - 1, matrix, visited, N);
-
+    std::cout << "=== Обработка файла: " << filename << " ===\n";
+    topological_sort(matrix, N);
     std::cout << "\n";
 
-    // Освобождение выделенной памяти
     free_matrix(matrix, N);
-    delete[] visited;
+}
 
-    std::cout << "\n========================================================================================\n";
-    std::cout << "Работа программы завершена.\n";
-    std::cout << "========================================================================================\n";
+int main() {
+    // Вызов функции для обоих входных файлов
+    process_file("Source/input.txt");   // Пример 1 (9 вершин)
+    process_file("Source/input_2.txt");  // Пример 2 (6 вершин)
 
     return 0;
 }
