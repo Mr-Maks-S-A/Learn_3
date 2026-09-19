@@ -1,7 +1,7 @@
 # Минимально требуемая версия CMake
 cmake_minimum_required(VERSION 3.14)
 
-project(pyramid_app VERSION 1.0 LANGUAGES CXX)
+project(Table_app VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,7 +18,12 @@ add_library(APP_utils INTERFACE)
 target_include_directories(APP_utils INTERFACE "${CMAKE_SOURCE_DIR}/Src/include")
 
 
-add_executable(pyramid_app "${CMAKE_SOURCE_DIR}/Src/code/main.cpp")
-target_link_libraries(pyramid_app PRIVATE APP_utils)
+add_executable(Table_1_app "${CMAKE_SOURCE_DIR}/Src/code/main_1.cpp")
+target_link_libraries(Table_1_app PRIVATE APP_utils)
 
+add_executable(Table_2_app "${CMAKE_SOURCE_DIR}/Src/code/main_2.cpp")
+target_link_libraries(Table_2_app PRIVATE APP_utils)
+
+add_executable(Table_3_app "${CMAKE_SOURCE_DIR}/Src/code/main_3.cpp")
+target_link_libraries(Table_3_app PRIVATE APP_utils)
 
